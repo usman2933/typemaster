@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TypeMaster — Precision Typing Practice</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --surface3: #22222f;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #7c6fff;
+    --accent2: #a594ff;
+    --accent-glow: rgba(124,111,255,0.25);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.15);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.15);
+    --yellow: #fbbf24;
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --correct: #4ade80;
+    --wrong: #f87171;
+    --cursor-color: #7c6fff;
+    --font-mono: 'Space Mono', monospace;
+    --font-display: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  html { scroll-behavior: smooth; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,111,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,111,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ambient glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(124,111,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    animation: slideDown 0.6s ease both;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px var(--accent-glow);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  .logo-text {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text span { color: var(--accent); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .theme-btn, .sound-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--font-display);
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .theme-btn:hover, .sound-btn:hover {
+    background: var(--surface3);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  .sound-btn.muted { color: var(--red); }
+
+  /* Controls row */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 24px;
+    animation: slideDown 0.6s 0.1s ease both;
+  }
+
+  .control-group {
+    display: flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .ctrl-btn {
+    padding: 9px 16px;
+    background: transparent;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: var(--font-display);
+    font-weight: 500;
+    transition: all 0.15s;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  .ctrl-btn:not(:last-child) {
+    border-right: 1px solid var(--border);
+  }
+
+  .ctrl-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .ctrl-btn:not(.active):hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .ctrl-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    user-select: none;
+  }
+
+  .ctrl-label + .control-group {
+    border-radius: 0 10px 10px 0;
+  }
+
+  /* Stats bar */
+  .live-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    animation: slideDown 0.6s 0.15s ease both;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+  }
+
+  .stat-card.active-stat::before {
+    transform: scaleX(1);
+  }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    transition: color 0.3s;
+  }
+
+  .stat-unit {
+    font-size: 13px;
+    color: var(--text3);
+    font-weight: 400;
+    margin-left: 2px;
+  }
+
+  #wpm-val { color: var(--accent); }
+  #acc-val { color: var(--green); }
+
+  /* Timer ring */
+  .timer-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .timer-ring {
+    position: relative;
+    width: 52px;
+    height: 52px;
+  }
+
+  .timer-ring svg {
+    transform: rotate(-90deg);
+    width: 52px;
+    height: 52px;
+  }
+
+  .timer-ring-bg { fill: none; stroke: var(--surface2); stroke-width: 3; }
+  .timer-ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 138;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+
+  .timer-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--font-mono);
+  }
+
+  /* Typing area */
+  .typing-wrap {
+    position: relative;
+    margin-bottom: 20px;
+    animation: slideDown 0.6s 0.2s ease both;
+  }
+
+  .typing-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .progress-bar-wrap {
+    flex: 1;
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 2px;
+    margin-right: 12px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.2s;
+  }
+
+  .word-count-info {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+  }
+
+  .typing-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    cursor: text;
+    position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    user-select: none;
+    min-height: 140px;
+  }
+
+  .typing-box.focused {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .typing-box.complete {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px var(--green-dim);
+  }
+
+  .typing-box.error-flash {
+    animation: errorFlash 0.2s ease;
+  }
+
+  .click-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    font-size: 15px;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    gap: 8px;
+    border-radius: 16px;
+  }
+
+  .click-hint.hidden { opacity: 0; }
+
+  .text-display {
+    font-family: var(--font-mono);
+    font-size: 19px;
+    line-height: 1.9;
+    letter-spacing: 0.02em;
+    position: relative;
+    word-break: break-word;
+  }
+
+  .char {
+    position: relative;
+    transition: color 0.05s;
+  }
+
+  .char.correct { color: var(--correct); }
+  .char.wrong { color: var(--wrong); background: var(--red-dim); border-radius: 2px; }
+  .char.pending { color: var(--text3); }
+  .char.extra { color: var(--wrong); text-decoration: underline; }
+
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    background: var(--cursor-color);
+    margin-left: -1px;
+    vertical-align: text-bottom;
+    border-radius: 1px;
+    box-shadow: 0 0 8px var(--accent-glow);
+    animation: blink 1s step-end infinite;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .word-group { display: inline; }
+  .word-group .word-wrap { display: inline; }
+
+  /* Hidden input */
+  #hidden-input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    animation: slideDown 0.6s 0.25s ease both;
+  }
+
+  .tool-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text2);
+    font-size: 13px;
+    font-family: var(--font-display);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .tool-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  .tool-btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .tool-btn.primary:hover {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  .tool-btn.danger:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+  }
+
+  /* Results panel */
+  .results-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    display: none;
+    animation: scaleIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+    margin-bottom: 24px;
+  }
+
+  .results-panel.show { display: block; }
+
+  .results-title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .res-item {
+    text-align: center;
+  }
+
+  .res-val {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .res-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+
+  .res-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* Chart */
+  .wpm-chart {
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    margin-top: 16px;
+  }
+
+  .chart-bar {
+    flex: 1;
+    background: var(--accent);
+    opacity: 0.6;
+    border-radius: 3px 3px 0 0;
+    transition: height 0.5s cubic-bezier(0.34,1.56,0.64,1);
+    min-width: 4px;
+    position: relative;
+  }
+
+  .chart-bar:hover { opacity: 1; }
+
+  .chart-label {
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+
+  /* Leaderboard */
+  .leaderboard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    animation: slideDown 0.6s 0.35s ease both;
+  }
+
+  .lb-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lb-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    gap: 12px;
+  }
+
+  .lb-row:hover { background: var(--surface2); }
+
+  .lb-rank {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text3);
+    width: 24px;
+    text-align: center;
+    font-family: var(--font-mono);
+  }
+
+  .lb-rank.gold { color: #fbbf24; }
+  .lb-rank.silver { color: #94a3b8; }
+  .lb-rank.bronze { color: #cd7c4a; }
+
+  .lb-name {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .lb-wpm {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+
+  .lb-acc {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+    min-width: 50px;
+    text-align: right;
+  }
+
+  .lb-date {
+    font-size: 11px;
+    color: var(--text3);
+    min-width: 60px;
+    text-align: right;
+  }
+
+  /* Heatmap */
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 4px;
+    margin-top: 12px;
+  }
+
+  .hkey {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    cursor: default;
+    transition: transform 0.1s;
+    position: relative;
+  }
+
+  .hkey:hover {
+    transform: scale(1.2);
+    z-index: 10;
+  }
+
+  .hkey.error0 { background: var(--surface2); }
+  .hkey.error1 { background: rgba(248,113,113,0.2); color: var(--red); }
+  .hkey.error2 { background: rgba(248,113,113,0.4); color: var(--red); }
+  .hkey.error3 { background: rgba(248,113,113,0.7); color: #fff; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 520px;
+    width: 90%;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .modal-overlay.open .modal {
+    transform: scale(1);
+  }
+
+  .modal-title {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    color: var(--text);
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+
+  .modal-close:hover { color: var(--text); }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-label { font-size: 14px; color: var(--text); }
+  .setting-desc { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  .toggle {
+    width: 44px;
+    height: 24px;
+    background: var(--surface3);
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    border: 1px solid var(--border2);
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle.on { background: var(--accent); }
+
+  .toggle::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: left 0.2s;
+  }
+
+  .toggle.on::after { left: 22px; }
+
+  /* Toast */
+  .toast-wrap {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    color: var(--text);
+    animation: toastIn 0.3s ease;
+    max-width: 280px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+  .toast.info { border-color: var(--accent); }
+
+  /* Capslock warning */
+  .caps-warning {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(251,191,36,0.1);
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--yellow);
+    margin-bottom: 12px;
+    animation: slideDown 0.3s ease;
+  }
+
+  .caps-warning.visible { display: flex; }
+
+  /* Smooth line */
+  .wpm-history-line {
+    width: 100%;
+    height: 60px;
+    margin-top: 16px;
+  }
+
+  /* Section headers */
+  .section-head {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-head::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Difficulty badge */
+  .diff-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  .diff-badge.easy { background: var(--green-dim); color: var(--green); }
+  .diff-badge.medium { background: rgba(251,191,36,0.15); color: var(--yellow); }
+  .diff-badge.hard { background: var(--red-dim); color: var(--red); }
+
+  /* Streak indicator */
+  .streak-bar {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .streak-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--surface3);
+    transition: background 0.2s;
+  }
+
+  .streak-dot.done { background: var(--accent); }
+
+  /* Animations */
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes errorFlash {
+    0%, 100% { background: var(--surface); }
+    50% { background: rgba(248,113,113,0.08); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px var(--accent-glow); }
+    50% { box-shadow: 0 0 35px rgba(124,111,255,0.5); }
+  }
+
+  @keyframes completeFlash {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+  /* Light theme */
+  body.light {
+    --bg: #f0f0f5;
+    --surface: #ffffff;
+    --surface2: #f5f5fa;
+    --surface3: #eaeaf0;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #0a0a1a;
+    --text2: #4a4a6a;
+    --text3: #8888aa;
+    --accent-glow: rgba(124,111,255,0.2);
+  }
+
+  body.light::before {
+    background-image:
+      linear-gradient(rgba(124,111,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,111,255,0.04) 1px, transparent 1px);
+  }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .live-stats { grid-template-columns: repeat(2, 1fr); }
+    .results-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* Quote display */
+  .quote-author {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text3);
+    font-style: italic;
+    text-align: right;
+  }
+
+  /* Punctuation toggle indicator */
+  .feature-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+
+  .ftag {
+    padding: 2px 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--font-mono);
+  }
+
+  .ftag.on { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+</style>
+</head>
+<body>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⌨</div>
+      <span class="logo-text">Type<span>Master</span></span>
+    </div>
+    <div class="header-right">
+      <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊 Sound</button>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()">🌙 Dark</button>
+      <button class="theme-btn" onclick="openModal('settingsModal')">⚙ Settings</button>
+      <button class="theme-btn" onclick="openModal('helpModal')">? Help</button>
+    </div>
+  </header>
+
+  <!-- Controls -->
+  <div class="controls">
+    <span class="ctrl-label">MODE</span>
+    <div class="control-group" id="modeGroup">
+      <button class="ctrl-btn active" onclick="setMode('words', this)">Words</button>
+      <button class="ctrl-btn" onclick="setMode('time', this)">Time</button>
+      <button class="ctrl-btn" onclick="setMode('quote', this)">Quote</button>
+      <button class="ctrl-btn" onclick="setMode('code', this)">Code</button>
+      <button class="ctrl-btn" onclick="setMode('custom', this)">Custom</button>
+    </div>
+
+    <span class="ctrl-label" id="countLabel">WORDS</span>
+    <div class="control-group" id="countGroup">
+      <button class="ctrl-btn active" onclick="setCount(15, this)">15</button>
+      <button class="ctrl-btn" onclick="setCount(30, this)">30</button>
+      <button class="ctrl-btn" onclick="setCount(50, this)">50</button>
+      <button class="ctrl-btn" onclick="setCount(100, this)">100</button>
+    </div>
+
+    <span class="ctrl-label">DIFF</span>
+    <div class="control-group" id="diffGroup">
+      <button class="ctrl-btn active" onclick="setDiff('common', this)">Common</button>
+      <button class="ctrl-btn" onclick="setDiff('advanced', this)">Advanced</button>
+      <button class="ctrl-btn" onclick="setDiff('numbers', this)">Numbers</button>
+    </div>
+  </div>
+
+  <!-- Feature tags -->
+  <div class="feature-tags" style="margin-bottom:20px;">
+    <div class="ftag" id="ftPunct" onclick="toggleFeature('punct')" style="cursor:pointer">punctuation</div>
+    <div class="ftag on" id="ftNumbers" onclick="toggleFeature('numbers')" style="cursor:pointer;display:none">numbers</div>
+    <div class="ftag" id="ftCapitals" onclick="toggleFeature('capitals')" style="cursor:pointer">capitals</div>
+    <div class="ftag" id="ftBlind" onclick="toggleFeature('blind')" style="cursor:pointer">blind mode</div>
+    <span class="diff-badge easy" id="diffBadge">Easy</span>
+  </div>
+
+  <!-- Live stats -->
+  <div class="live-stats">
+    <div class="stat-card" id="wpmCard">
+      <div class="stat-label">WPM</div>
+      <div class="stat-value" id="wpm-val">—</div>
+    </div>
+    <div class="stat-card" id="accCard">
+      <div class="stat-label">Accuracy</div>
+      <div class="stat-value" id="acc-val">—</div>
+    </div>
+    <div class="stat-card" id="streakCard">
+      <div class="stat-label">Streak</div>
+      <div class="stat-value" id="streak-val">0</div>
+      <div class="streak-bar" id="streakBar"></div>
+    </div>
+    <div class="stat-card timer-wrap" id="timerCard">
+      <div class="stat-label">Time</div>
+      <div class="timer-ring" id="timerRing">
+        <svg viewBox="0 0 52 52">
+          <circle class="timer-ring-bg" cx="26" cy="26" r="22"/>
+          <circle class="timer-ring-fill" id="timerArc" cx="26" cy="26" r="22"/>
+        </svg>
+        <div class="timer-text" id="timer-val">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Capslock warning -->
+  <div class="caps-warning" id="capsWarn">
+    ⚠ Caps Lock is ON
+  </div>
+
+  <!-- Typing area -->
+  <div class="typing-wrap">
+    <div class="typing-header">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="word-count-info" id="wordInfo">0 / 15</div>
+    </div>
+    <div class="typing-box" id="typingBox" onclick="focusInput()">
+      <div class="click-hint" id="clickHint">
+        <span>Click here or press any key to start</span>
+      </div>
+      <div class="text-display" id="textDisplay"></div>
+      <input type="text" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    </div>
+    <div id="quoteAuthor" class="quote-author"></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button class="tool-btn primary" onclick="restartTest()">↺ Restart <kbd>Tab</kbd></button>
+    <button class="tool-btn" onclick="newTest()">⊕ New Test <kbd>Enter</kbd></button>
+    <button class="tool-btn" onclick="openModal('customModal')">✎ Custom Text</button>
+    <button class="tool-btn" onclick="copyResult()" id="copyBtn" style="display:none">⎘ Copy Result</button>
+    <button class="tool-btn danger" onclick="clearHistory()">⊘ Clear History</button>
+  </div>
+
+  <!-- Results panel -->
+  <div class="results-panel" id="resultsPanel">
+    <div class="results-title">✦ Test Complete</div>
+    <div class="results-grid">
+      <div class="res-item">
+        <div class="res-val" id="r-wpm">—</div>
+        <div class="res-label">WPM</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-raw">—</div>
+        <div class="res-label">Raw WPM</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-acc">—</div>
+        <div class="res-label">Accuracy</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-err">—</div>
+        <div class="res-label">Errors</div>
+      </div>
+      <div class="res-item">
+        <div class="res-val" id="r-time">—</div>
+        <div class="res-label">Time</div>
+      </div>
+    </div>
+    <hr class="res-divider">
+    <div class="section-head">WPM Over Time</div>
+    <div class="wpm-chart" id="wpmChart"></div>
+    <hr class="res-divider">
+    <div class="section-head">Key Error Heatmap</div>
+    <div class="heatmap-grid" id="heatmapGrid"></div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard">
+    <div class="lb-title">🏆 Personal Best</div>
+    <div id="lbRows">
+      <div style="color:var(--text3);font-size:14px;text-align:center;padding:16px 0">Complete a test to see your scores here.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="settingsModal" onclick="closeOnOverlay(event, 'settingsModal')">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+    <div class="modal-title">⚙ Settings</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Sound Effects</div><div class="setting-desc">Key click sounds as you type</div></div>
+      <div class="toggle" id="sndToggle" onclick="toggleSetting('sound')"></div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Smooth Cursor</div><div class="setting-desc">Animated caret movement</div></div>
+      <div class="toggle on" id="cursorToggle" onclick="toggleSetting('cursor')"></div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Show Live WPM</div><div class="setting-desc">Update WPM as you type</div></div>
+      <div class="toggle on" id="wpmToggle" onclick="toggleSetting('liveWpm')"></div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Strict Space</div><div class="setting-desc">Space cannot advance past wrong word</div></div>
+      <div class="toggle" id="strictToggle" onclick="toggleSetting('strict')"></div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Flip Test Colors</div><div class="setting-desc">Correct = muted, wrong = colored</div></div>
+      <div class="toggle" id="flipToggle" onclick="toggleSetting('flip')"></div>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Font Size</div></div>
+      <select id="fontSizeSelect" onchange="setFontSize(this.value)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:6px 12px;border-radius:8px;font-family:var(--font-display)">
+        <option value="16">Small</option>
+        <option value="19" selected>Medium</option>
+        <option value="24">Large</option>
+        <option value="30">XL</option>
+      </select>
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">Caret Style</div></div>
+      <select id="caretStyle" onchange="setCaretStyle(this.value)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:6px 12px;border-radius:8px;font-family:var(--font-display)">
+        <option value="line">Line |</option>
+        <option value="block">Block █</option>
+        <option value="underline">Underline _</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="customModal" onclick="closeOnOverlay(event, 'customModal')">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('customModal')">×</button>
+    <div class="modal-title">✎ Custom Text</div>
+    <textarea id="customInput" placeholder="Type or paste your custom text here..." style="width:100%;height:140px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px;color:var(--text);font-family:var(--font-mono);font-size:14px;resize:vertical;outline:none;line-height:1.6;margin-bottom:16px"></textarea>
+    <button class="tool-btn primary" onclick="applyCustom()" style="width:100%;justify-content:center;padding:12px">Apply Custom Text</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="helpModal" onclick="closeOnOverlay(event, 'helpModal')">
+  <div class="modal" style="position:relative;max-width:480px">
+    <button class="modal-close" onclick="closeModal('helpModal')">×</button>
+    <div class="modal-title">? Keyboard Shortcuts</div>
+    <div style="display:grid;gap:10px;margin-top:4px">
+      <div class="lb-row" style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;color:var(--text)">Restart test</span><kbd style="margin-left:auto">Tab</kbd></div>
+      <div class="lb-row" style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;color:var(--text)">New test</span><kbd style="margin-left:auto">Enter</kbd> (when done)</div>
+      <div class="lb-row" style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;color:var(--text)">Skip word (wrong)</span><kbd style="margin-left:auto">Ctrl+Z</kbd></div>
+      <div class="lb-row" style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;color:var(--text)">Delete word</span><kbd style="margin-left:auto">Ctrl+Backspace</kbd></div>
+      <div class="lb-row" style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:14px;color:var(--text)">Toggle theme</span><kbd style="margin-left:auto">Ctrl+T</kbd></div>
+      <div class="lb-row" style="padding:8px 0"><span style="font-size:14px;color:var(--text)">Focus input</span><kbd style-="margin-left:auto">Any key</kbd></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== WORD BANKS =====
+const WORDS_COMMON = "the be to of and a in that have it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us".split(" ");
+
+const WORDS_ADVANCED = "ethereal ephemeral quintessential serendipity melancholy perspicacious loquacious sanguine obfuscate diligently contemplative metamorphosis clandestine exacerbate inquisitive benevolent discombobulate superfluous eloquent tenacious nomenclature ubiquitous meticulous plethora esoteric conundrum magnanimous propitious fastidious audacious ebullient recalcitrant inscrutable perspicuous immutable perfidious sagacious voracious nefarious garrulous truculent felicitous magniloquent pusillanimous perspicacious surreptitious vicissitudes circumlocution".split(" ");
+
+const CODE_SNIPPETS = [
+  `function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}`,
+  `const arr = [1, 2, 3, 4, 5];\nconst doubled = arr.map(x => x * 2);\nconst sum = doubled.reduce((a, b) => a + b, 0);`,
+  `class Queue {\n  constructor() { this.items = []; }\n  enqueue(el) { this.items.push(el); }\n  dequeue() { return this.items.shift(); }\n}`,
+];
+
+const QUOTES = [
+  { text: "The greatest glory in living lies not in never falling, but in rising every time we fall.", author: "— Nelson Mandela" },
+  { text: "The way to get started is to quit talking and begin doing. Many of life's failures are people who did not realize how close they were to success when they gave up.", author: "— Walt Disney" },
+  { text: "In the middle of every difficulty lies opportunity. Life is what happens when you are busy making other plans.", author: "— Albert Einstein" },
+  { text: "You have brains in your head. You have feet in your shoes. You can steer yourself any direction you choose.", author: "— Dr. Seuss" },
+  { text: "When you reach the end of your rope, tie a knot in it and hang on. Spread love everywhere you go.", author: "— Franklin D. Roosevelt" },
+];
+
+// ===== STATE =====
+let state = {
+  mode: 'words', count: 15, diff: 'common',
+  text: [], typed: [],
+  currentIndex: 0, wordIndex: 0,
+  started: false, finished: false,
+  startTime: null, endTime: null,
+  timer: null, timeLeft: 15,
+  totalTime: 15,
+  errors: 0, totalChars: 0, correctChars: 0,
+  wpmHistory: [], streak: 0, maxStreak: 0,
+  keyErrors: {}, keyHits: {},
+  sound: false, liveWpm: true, strict: false,
+  flip: false, blind: false,
+  punct: false, capitals: false,
+  cursorStyle: 'line',
+  customText: '',
+  settings: { sound: false, cursor: true, liveWpm: true, strict: false, flip: false },
+  lastWpmTick: 0,
+  quote: null,
+  intervalWpm: null,
+};
+
+const history = JSON.parse(localStorage.getItem('typingHistory') || '[]');
+let audioCtx = null;
+
+// ===== AUDIO =====
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playClick(freq = 800, dur = 0.03) {
+  if (!state.sound) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'square';
+    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    osc.start();
+    osc.stop(ctx.currentTime + dur);
+  } catch(e) {}
+}
+
+function playError() { playClick(300, 0.08); }
+function playComplete() {
+  [523, 659, 784, 1047].forEach((f, i) => {
+    setTimeout(() => playClick(f, 0.15), i * 80);
+  });
+}
+
+// ===== TEXT GENERATION =====
+function generateText() {
+  let words = [];
+  if (state.mode === 'code') {
+    const snippet = CODE_SNIPPETS[Math.floor(Math.random() * CODE_SNIPPETS.length)];
+    state.text = snippet.split('');
+    return;
+  }
+  if (state.mode === 'quote') {
+    state.quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+    state.text = state.quote.text.split('');
+    document.getElementById('quoteAuthor').textContent = state.quote.author;
+    return;
+  }
+  if (state.mode === 'custom' && state.customText) {
+    state.text = state.customText.trim().split('');
+    return;
+  }
+  document.getElementById('quoteAuthor').textContent = '';
+  const pool = state.diff === 'advanced' ? WORDS_ADVANCED : state.diff === 'numbers' ? null : WORDS_COMMON;
+  const wordCount = state.mode === 'time' ? 200 : state.count;
+  for (let i = 0; i < wordCount; i++) {
+    let word;
+    if (state.diff === 'numbers') {
+      word = Math.floor(Math.random() * 99999).toString();
+    } else {
+      word = pool[Math.floor(Math.random() * pool.length)];
+      if (state.capitals && Math.random() < 0.3) word = word.charAt(0).toUpperCase() + word.slice(1);
+    }
+    if (state.punct && Math.random() < 0.2) {
+      const puncts = ['.', ',', '!', '?', ';', ':'];
+      word += puncts[Math.floor(Math.random() * puncts.length)];
+    }
+    words.push(word);
+  }
+  state.text = words.join(' ').split('');
+}
+
+// ===== RENDER =====
+function render() {
+  const display = document.getElementById('textDisplay');
+  const isBlind = state.blind;
+  let html = '';
+  const chars = state.text;
+  const typed = state.typed;
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i] === '\n' ? '↵\n' : chars[i];
+    let cls = 'char pending';
+    if (i < typed.length) {
+      if (isBlind) cls = 'char pending';
+      else if (typed[i] === chars[i]) cls = state.settings.flip ? 'char pending' : 'char correct';
+      else cls = state.settings.flip ? 'char correct' : 'char wrong';
+    }
+    const escapedCh = ch === '<' ? '&lt;' : ch === '>' ? '&gt;' : ch === '&' ? '&amp;' : ch === '\n' ? '↵<br>' : ch === ' ' ? ' ' : ch;
+    html += `<span class="${cls}" id="c${i}">${escapedCh}</span>`;
+  }
+  // Extra typed chars
+  if (typed.length > chars.length) {
+    for (let i = chars.length; i < typed.length; i++) {
+      html += `<span class="char extra">${typed[i]}</span>`;
+    }
+  }
+  display.innerHTML = html;
+  // Position cursor
+  const cursorEl = document.createElement('span');
+  cursorEl.className = 'cursor';
+  if (state.cursorStyle === 'block') {
+    cursorEl.style.cssText = 'width:0.6em;opacity:0.5;border-radius:2px;';
+  } else if (state.cursorStyle === 'underline') {
+    cursorEl.style.cssText = 'width:0.7em;height:2px;vertical-align:baseline;margin-bottom:-2px;';
+  }
+  const cursorIdx = typed.length;
+  const charEl = document.getElementById('c' + cursorIdx);
+  if (charEl) {
+    charEl.style.position = 'relative';
+    charEl.insertBefore(cursorEl, charEl.firstChild);
+  } else if (display.lastChild) {
+    display.appendChild(cursorEl);
+  }
+  // Progress
+  const pct = Math.min(100, (typed.length / chars.length) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  const wordsDone = state.text.slice(0, typed.length).join('').split(' ').length;
+  document.getElementById('wordInfo').textContent = `${wordsDone} / ${state.mode === 'time' ? '∞' : state.count}`;
+}
+
+// ===== FOCUS =====
+function focusInput() {
+  document.getElementById('hidden-input').focus();
+  document.getElementById('clickHint').classList.add('hidden');
+  document.getElementById('typingBox').classList.add('focused');
+}
+
+// ===== TIMER =====
+function startTimer() {
+  if (state.mode === 'time') {
+    state.timeLeft = state.count;
+    state.totalTime = state.count;
+    updateTimerDisplay();
+    state.timer = setInterval(() => {
+      state.timeLeft--;
+      updateTimerDisplay();
+      if (state.timeLeft <= 0) finishTest();
+    }, 1000);
+  }
+  // WPM tick every second
+  state.intervalWpm = setInterval(() => {
+    if (!state.started || state.finished) return;
+    const elapsed = (Date.now() - state.startTime) / 1000 / 60;
+    const correct = state.typed.filter((c, i) => c === state.text[i]).length;
+    const wpm = elapsed > 0 ? Math.round((correct / 5) / elapsed) : 0;
+    state.wpmHistory.push(wpm);
+    updateLiveStats();
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-val');
+  const arc = document.getElementById('timerArc');
+  el.textContent = state.mode === 'time' ? state.timeLeft : (state.startTime ? Math.floor((Date.now() - state.startTime) / 1000) : '—');
+  if (state.mode === 'time') {
+    const pct = state.timeLeft / state.totalTime;
+    const circ = 2 * Math.PI * 22;
+    arc.style.strokeDashoffset = circ * (1 - pct);
+    arc.style.stroke = pct < 0.25 ? 'var(--red)' : pct < 0.5 ? 'var(--yellow)' : 'var(--accent)';
+  }
+}
+
+// ===== INPUT HANDLER =====
+document.getElementById('hidden-input').addEventListener('keydown', (e) => {
+  if (state.finished) {
+    if (e.key === 'Enter') { newTest(); return; }
+    if (e.key === 'Tab') { e.preventDefault(); restartTest(); return; }
+    return;
+  }
+  if (e.key === 'Tab') { e.preventDefault(); restartTest(); return; }
+  if (e.key === 'CapsLock') {
+    setTimeout(() => {
+      document.getElementById('capsWarn').classList.toggle('visible', e.getModifierState('CapsLock'));
+    }, 10);
+    return;
+  }
+  // Ctrl shortcuts
+  if (e.ctrlKey && e.key === 'Backspace') {
+    e.preventDefault();
+    // Delete last word
+    let i = state.typed.length - 1;
+    while (i >= 0 && state.typed[i] !== ' ') i--;
+    state.typed = state.typed.slice(0, i >= 0 ? i + 1 : 0);
+    render();
+    return;
+  }
+  if (e.ctrlKey && e.key === 't') { e.preventDefault(); toggleTheme(); return; }
+  if (e.ctrlKey && e.key === 'z') {
+    e.preventDefault();
+    // Skip to next space
+    let i = state.typed.length;
+    while (i < state.text.length && state.text[i] !== ' ') i++;
+    if (state.text[i] === ' ') state.typed = state.text.slice(0, i + 1);
+    render(); updateLiveStats(); return;
+  }
+});
+
+document.getElementById('hidden-input').addEventListener('input', handleInput);
+
+function handleInput(e) {
+  if (state.finished) return;
+  const val = document.getElementById('hidden-input').value;
+  document.getElementById('hidden-input').value = '';
+  if (!val) return;
+
+  // Detect caps lock
+  for (const ch of val) {
+    if (/[A-Z]/.test(ch) && !/[A-Za-z]/.test(ch.toLowerCase())) {
+      document.getElementById('capsWarn').classList.add('visible');
+    }
+  }
+
+  if (!state.started) {
+    state.started = true;
+    state.startTime = Date.now();
+    document.getElementById('typingBox').classList.add('focused');
+    document.getElementById('timerCard').classList.add('active-stat');
+    startTimer();
+    // Start timer display update for elapsed
+    if (state.mode !== 'time') {
+      setInterval(() => {
+        if (state.started && !state.finished) updateTimerDisplay();
+      }, 200);
+    }
+  }
+
+  for (const ch of val) {
+    const idx = state.typed.length;
+    const expected = state.text[idx];
+
+    // Space handling
+    if (ch === ' ' && state.mode !== 'code') {
+      if (state.strict) {
+        // Check current word is correct
+        let wordStart = state.typed.lastIndexOf(' ') + 1;
+        const expectedWord = state.text.slice(wordStart, idx).join('');
+        const typedWord = state.typed.slice(wordStart).join('');
+        if (typedWord !== expectedWord) { playError(); continue; }
+      }
+      state.typed.push(' ');
+      playClick(700, 0.03);
+      updateStreak(true);
+    } else if (idx < state.text.length) {
+      const correct = ch === expected;
+      state.typed.push(ch);
+      if (correct) {
+        state.correctChars++;
+        playClick(800, 0.02);
+        updateStreak(true);
+        if (state.keyHits[expected]) state.keyHits[expected]++;
+        else state.keyHits[expected] = 1;
+      } else {
+        state.errors++;
+        playError();
+        updateStreak(false);
+        document.getElementById('typingBox').classList.add('error-flash');
+        setTimeout(() => document.getElementById('typingBox').classList.remove('error-flash'), 200);
+        if (state.keyErrors[expected]) state.keyErrors[expected]++;
+        else state.keyErrors[expected] = 1;
+      }
+      state.totalChars++;
+    }
+  }
+
+  render();
+  updateLiveStats();
+
+  // Check completion (words mode)
+  if (state.typed.length >= state.text.length && state.mode !== 'time') {
+    finishTest();
+  }
+}
+
+document.getElementById('hidden-input').addEventListener('blur', () => {
+  document.getElementById('typingBox').classList.remove('focused');
+});
+
+// Global key capture
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.tagName === 'SELECT') return;
+  if (['F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12'].includes(e.key)) return;
+  if (e.key.length === 1 || e.key === 'Backspace') {
+    focusInput();
+  }
+});
+
+// ===== STATS =====
+function updateLiveStats() {
+  if (!state.started || !state.settings.liveWpm) return;
+  const elapsed = (Date.now() - state.startTime) / 1000 / 60;
+  const correct = state.typed.filter((c, i) => c === state.text[i]).length;
+  const wpm = elapsed > 0 ? Math.round((correct / 5) / elapsed) : 0;
+  const acc = state.totalChars > 0 ? Math.round((state.correctChars / state.totalChars) * 100) : 100;
+  document.getElementById('wpm-val').textContent = wpm;
+  document.getElementById('acc-val').textContent = acc + '%';
+  document.getElementById('wpmCard').classList.add('active-stat');
+  document.getElementById('accCard').classList.add('active-stat');
+}
+
+function updateStreak(correct) {
+  if (correct) {
+    state.streak++;
+    if (state.streak > state.maxStreak) state.maxStreak = state.streak;
+  } else {
+    state.streak = 0;
+  }
+  document.getElementById('streak-val').textContent = state.streak;
+  const bar = document.getElementById('streakBar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'streak-dot' + (i < state.streak ? ' done' : '');
+    bar.appendChild(dot);
+  }
+}
+
+// ===== FINISH =====
+function finishTest() {
+  if (state.finished) return;
+  state.finished = true;
+  state.endTime = Date.now();
+  clearInterval(state.timer);
+  clearInterval(state.intervalWpm);
+  document.getElementById('typingBox').classList.add('complete');
+  playComplete();
+
+  const elapsed = (state.endTime - state.startTime) / 1000;
+  const elapsedMin = elapsed / 60;
+  const correct = state.typed.filter((c, i) => c === state.text[i]).length;
+  const wpm = elapsedMin > 0 ? Math.round((correct / 5) / elapsedMin) : 0;
+  const rawWpm = elapsedMin > 0 ? Math.round((state.typed.length / 5) / elapsedMin) : 0;
+  const acc = state.totalChars > 0 ? Math.round((state.correctChars / state.totalChars) * 100) : 100;
+
+  document.getElementById('r-wpm').textContent = wpm;
+  document.getElementById('r-raw').textContent = rawWpm;
+  document.getElementById('r-acc').textContent = acc + '%';
+  document.getElementById('r-err').textContent = state.errors;
+  document.getElementById('r-time').textContent = Math.round(elapsed) + 's';
+  document.getElementById('wpm-val').textContent = wpm;
+  document.getElementById('acc-val').textContent = acc + '%';
+
+  // WPM chart
+  renderWpmChart();
+  // Heatmap
+  renderHeatmap();
+
+  document.getElementById('resultsPanel').classList.add('show');
+  document.getElementById('copyBtn').style.display = 'flex';
+
+  // Save to history
+  const entry = {
+    wpm, rawWpm, acc, errors: state.errors, time: Math.round(elapsed),
+    mode: state.mode, count: state.count, diff: state.diff,
+    date: new Date().toLocaleDateString(), timestamp: Date.now()
+  };
+  history.unshift(entry);
+  if (history.length > 20) history.pop();
+  localStorage.setItem('typingHistory', JSON.stringify(history));
+  renderLeaderboard();
+
+  // Toast
+  if (wpm > 80) showToast('🔥 Amazing speed! ' + wpm + ' WPM!', 'success');
+  else if (wpm > 50) showToast('✓ Nice work! ' + wpm + ' WPM', 'info');
+
+  document.getElementById('typingBox').style.animation = 'completeFlash 0.4s ease';
+  document.getElementById('timer-val').textContent = '✓';
+  document.getElementById('timerArc').style.stroke = 'var(--green)';
+}
+
+// ===== CHART =====
+function renderWpmChart() {
+  const chart = document.getElementById('wpmChart');
+  chart.innerHTML = '';
+  const data = state.wpmHistory.length ? state.wpmHistory : [0];
+  const max = Math.max(...data, 1);
+  data.forEach(v => {
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar';
+    bar.style.height = Math.max(4, (v / max) * 100) + '%';
+    bar.title = v + ' WPM';
+    chart.appendChild(bar);
+  });
+}
+
+// ===== HEATMAP =====
+const KB_ROWS = [
+  ['q','w','e','r','t','y','u','i','o','p','[',']','\\'],
+  ['a','s','d','f','g','h','j','k','l',';',"'",'',''],
+  ['z','x','c','v','b','n','m',',','.','/','','',''],
+];
+
+function renderHeatmap() {
+  const grid = document.getElementById('heatmapGrid');
+  grid.innerHTML = '';
+  KB_ROWS.forEach(row => {
+    row.forEach(key => {
+      const el = document.createElement('div');
+      el.className = 'hkey';
+      el.textContent = key;
+      if (key) {
+        const errs = state.keyErrors[key] || 0;
+        if (errs === 0) el.classList.add('error0');
+        else if (errs <= 1) el.classList.add('error1');
+        else if (errs <= 3) el.classList.add('error2');
+        else el.classList.add('error3');
+        if (errs) el.title = `${key}: ${errs} error${errs > 1 ? 's' : ''}`;
+      } else {
+        el.style.visibility = 'hidden';
+      }
+      grid.appendChild(el);
+    });
+  });
+}
+
+// ===== LEADERBOARD =====
+function renderLeaderboard() {
+  const container = document.getElementById('lbRows');
+  if (!history.length) {
+    container.innerHTML = '<div style="color:var(--text3);font-size:14px;text-align:center;padding:16px 0">Complete a test to see your scores here.</div>';
+    return;
+  }
+  const sorted = [...history].sort((a, b) => b.wpm - a.wpm).slice(0, 8);
+  container.innerHTML = sorted.map((e, i) => {
+    const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+    return `<div class="lb-row">
+      <span class="lb-rank ${rankClass}">${medal || '#' + (i + 1)}</span>
+      <span class="lb-name">${e.mode} · ${e.count} · ${e.diff}</span>
+      <span class="lb-wpm">${e.wpm} WPM</span>
+      <span class="lb-acc">${e.acc}%</span>
+      <span class="lb-date">${e.date}</span>
+    </div>`;
+  }).join('');
+}
+
+// ===== CONTROLS =====
+function setMode(m, btn) {
+  state.mode = m;
+  setActive('modeGroup', btn);
+  const label = document.getElementById('countLabel');
+  const cg = document.getElementById('countGroup');
+  if (m === 'time') {
+    label.textContent = 'SECS';
+    cg.querySelectorAll('.ctrl-btn')[0].textContent = '15';
+    cg.querySelectorAll('.ctrl-btn')[1].textContent = '30';
+    cg.querySelectorAll('.ctrl-btn')[2].textContent = '60';
+    cg.querySelectorAll('.ctrl-btn')[3].textContent = '120';
+    setCount(15, cg.querySelector('.ctrl-btn'));
+  } else if (m === 'quote' || m === 'code' || m === 'custom') {
+    label.textContent = '—';
+    cg.style.opacity = '0.4';
+    cg.style.pointerEvents = 'none';
+  } else {
+    label.textContent = 'WORDS';
+    cg.style.opacity = '1';
+    cg.style.pointerEvents = '';
+    cg.querySelectorAll('.ctrl-btn')[0].textContent = '15';
+    cg.querySelectorAll('.ctrl-btn')[1].textContent = '30';
+    cg.querySelectorAll('.ctrl-btn')[2].textContent = '50';
+    cg.querySelectorAll('.ctrl-btn')[3].textContent = '100';
+    setCount(15, cg.querySelector('.ctrl-btn'));
+  }
+  resetTest();
+}
+
+function setCount(n, btn) {
+  state.count = n;
+  state.timeLeft = n;
+  setActive('countGroup', btn);
+  resetTest();
+}
+
+function setDiff(d, btn) {
+  state.diff = d;
+  setActive('diffGroup', btn);
+  const badge = document.getElementById('diffBadge');
+  badge.textContent = d === 'common' ? 'Easy' : d === 'advanced' ? 'Hard' : 'Numbers';
+  badge.className = 'diff-badge ' + (d === 'common' ? 'easy' : d === 'advanced' ? 'hard' : 'medium');
+  resetTest();
+}
+
+function setActive(groupId, activeBtn) {
+  document.getElementById(groupId).querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+  if (activeBtn) activeBtn.classList.add('active');
+}
+
+function toggleFeature(f) {
+  if (f === 'punct') {
+    state.punct = !state.punct;
+    document.getElementById('ftPunct').classList.toggle('on', state.punct);
+  } else if (f === 'capitals') {
+    state.capitals = !state.capitals;
+    document.getElementById('ftCapitals').classList.toggle('on', state.capitals);
+  } else if (f === 'blind') {
+    state.blind = !state.blind;
+    document.getElementById('ftBlind').classList.toggle('on', state.blind);
+    render();
+    return;
+  }
+  resetTest();
+}
+
+// ===== RESET / RESTART =====
+function resetTest() {
+  clearInterval(state.timer);
+  clearInterval(state.intervalWpm);
+  state.typed = [];
+  state.started = false;
+  state.finished = false;
+  state.startTime = null;
+  state.endTime = null;
+  state.errors = 0;
+  state.totalChars = 0;
+  state.correctChars = 0;
+  state.wpmHistory = [];
+  state.streak = 0;
+  state.maxStreak = 0;
+  state.keyErrors = {};
+  state.keyHits = {};
+  state.timeLeft = state.count;
+
+  document.getElementById('wpm-val').textContent = '—';
+  document.getElementById('acc-val').textContent = '—';
+  document.getElementById('timer-val').textContent = '—';
+  document.getElementById('streak-val').textContent = '0';
+  document.getElementById('streakBar').innerHTML = '';
+  document.getElementById('progressBar').style.width = '0';
+  document.getElementById('resultsPanel').classList.remove('show');
+  document.getElementById('copyBtn').style.display = 'none';
+  document.getElementById('typingBox').classList.remove('complete', 'focused');
+  document.getElementById('typingBox').style.animation = '';
+  document.getElementById('timerArc').style.strokeDashoffset = '0';
+  document.getElementById('timerArc').style.stroke = 'var(--accent)';
+  document.getElementById('timerCard').classList.remove('active-stat');
+  document.getElementById('wpmCard').classList.remove('active-stat');
+  document.getElementById('accCard').classList.remove('active-stat');
+  document.getElementById('clickHint').classList.remove('hidden');
+  document.getElementById('hidden-input').value = '';
+  document.getElementById('quoteAuthor').textContent = '';
+
+  generateText();
+  render();
+}
+
+function restartTest() { resetTest(); }
+function newTest() { generateText(); resetTest(); }
+
+// ===== SETTINGS =====
+function toggleSetting(key) {
+  state.settings[key] = !state.settings[key];
+  const toggleId = { sound: 'sndToggle', cursor: 'cursorToggle', liveWpm: 'wpmToggle', strict: 'strictToggle', flip: 'flipToggle' }[key];
+  document.getElementById(toggleId).classList.toggle('on', state.settings[key]);
+  if (key === 'sound') {
+    state.sound = state.settings.sound;
+    document.getElementById('soundBtn').classList.toggle('muted', !state.sound);
+    document.getElementById('soundBtn').textContent = state.sound ? '🔊 Sound' : '🔇 Sound';
+  }
+}
+
+function toggleSound() {
+  state.settings.sound = !state.settings.sound;
+  state.sound = state.settings.sound;
+  const btn = document.getElementById('soundBtn');
+  const toggle = document.getElementById('sndToggle');
+  btn.textContent = state.sound ? '🔊 Sound' : '🔇 Sound';
+  btn.classList.toggle('muted', !state.sound);
+  toggle.classList.toggle('on', state.sound);
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('light');
+  const isLight = document.body.classList.contains('light');
+  document.getElementById('themeBtn').textContent = isLight ? '☀ Light' : '🌙 Dark';
+}
+
+function setFontSize(size) {
+  document.getElementById('textDisplay').style.fontSize = size + 'px';
+}
+
+function setCaretStyle(style) {
+  state.cursorStyle = style;
+  render();
+}
+
+// ===== MODALS =====
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function closeOnOverlay(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+
+// ===== CUSTOM TEXT =====
+function applyCustom() {
+  const txt = document.getElementById('customInput').value.trim();
+  if (!txt) { showToast('Please enter some text first.', 'error'); return; }
+  state.customText = txt;
+  state.mode = 'custom';
+  closeModal('customModal');
+  resetTest();
+  showToast('Custom text applied!', 'success');
+}
+
+// ===== COPY RESULT =====
+function copyResult() {
+  const elapsed = (state.endTime - state.startTime) / 1000;
+  const correct = state.typed.filter((c, i) => c === state.text[i]).length;
+  const wpm = Math.round((correct / 5) / (elapsed / 60));
+  const acc = state.totalChars > 0 ? Math.round((state.correctChars / state.totalChars) * 100) : 100;
+  const text = `TypeMaster Result\nWPM: ${wpm} | Accuracy: ${acc}% | Errors: ${state.errors} | Time: ${Math.round(elapsed)}s\nMode: ${state.mode} · ${state.count} · ${state.diff}`;
+  navigator.clipboard.writeText(text).then(() => showToast('Result copied!', 'success'));
+}
+
+// ===== CLEAR HISTORY =====
+function clearHistory() {
+  history.length = 0;
+  localStorage.removeItem('typingHistory');
+  renderLeaderboard();
+  showToast('History cleared.', 'info');
+}
+
+// ===== TOAST =====
+function showToast(msg, type = 'info') {
+  const wrap = document.getElementById('toastWrap');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  wrap.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.3s';
+    setTimeout(() => toast.remove(), 300);
+  }, 2800);
+}
+
+// ===== KEYBOARD LISTENER =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    restartTest();
+  }
+  if (e.ctrlKey && e.key === 't') {
+    e.preventDefault();
+    toggleTheme();
+  }
+});
+
+// ===== INIT =====
+renderLeaderboard();
+generateText();
+render();
+
+// Caps lock detection on load
+document.getElementById('hidden-input').addEventListener('keyup', (e) => {
+  const caps = e.getModifierState && e.getModifierState('CapsLock');
+  document.getElementById('capsWarn').classList.toggle('visible', caps);
+});
+</script>
+</body>
+</html>
